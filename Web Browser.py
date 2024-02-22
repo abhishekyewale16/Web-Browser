@@ -1,4 +1,4 @@
-# Web Browser
+# Web Browser (Main)
 import sys
 from PyQt5.QtCore import QUrl, QDir
 from PyQt5.QtWebEngineWidgets import QWebEngineView
