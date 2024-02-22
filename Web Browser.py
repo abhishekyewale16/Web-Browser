@@ -4,7 +4,7 @@ from PyQt5.QtCore import QUrl, QDir
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import *
 import sqlite3
-
+import random as rd
 
 class Window(QMainWindow):
     def __init__(self, *args, **kwargs):
