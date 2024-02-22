@@ -2,6 +2,8 @@ import sys
 from PyQt5.QtCore import QUrl, QDir
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import *
+import sqlite3
+
 
 class Window(QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -76,6 +78,20 @@ class Window(QMainWindow):
 
         self.browser.maximumSize()
         self.show()
+        self.create_table()
+    
+    def create_table(self):
+        connection = sqlite3.connect('browser_history.db')
+        cursor = connection.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                url TEXT NOT NULL
+            )
+        ''')
+        connection.commit()
+        connection.close()
+
 
     def download_requested(self, download):
         options = QFileDialog.Options()
@@ -91,8 +107,20 @@ class Window(QMainWindow):
     def go_to_URL(self, url: QUrl):
         if url.scheme() == '':
             url.setScheme('https://')
+
+        # Insert the URL into the history table
+        self.insert_url_to_history(url.toString())
+
         self.browser.setUrl(url)
         self.update_AddressBar(url)
+        
+    def insert_url_to_history(self, url):
+        connection = sqlite3.connect('browser_history.db')
+        cursor = connection.cursor()
+        cursor.execute('INSERT INTO history (url) VALUES (?)', (url,))
+        connection.commit()
+        connection.close()
+
 
     def update_AddressBar(self, url):
         self.URLBar.setText(url.toString())
