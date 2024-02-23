@@ -4,7 +4,8 @@ from PyQt5.QtCore import QUrl, QDir
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import *
 import sqlite3
-import random as rd
+from datetime import datetime
+
 
 DATABASE_FILE = 'browser_history.db'
 TABLE_NAME = 'history'
@@ -91,7 +92,8 @@ class Window(QMainWindow):
             cursor.execute(f'''
                 CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    url TEXT NOT NULL
+                    url TEXT NOT NULL,
+                    timestamp TEXT NOT NULL
                 )
             ''')
             connection.commit()
@@ -104,7 +106,11 @@ class Window(QMainWindow):
         try:
             connection = sqlite3.connect(DATABASE_FILE)
             cursor = connection.cursor()
-            cursor.execute(f'INSERT INTO {TABLE_NAME} (url) VALUES (?)', (full_url,))
+
+            # Get current timestamp in a specific format
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            cursor.execute(f'INSERT INTO {TABLE_NAME} (url, timestamp) VALUES (?, ?)', (full_url, timestamp))
             connection.commit()
         except sqlite3.Error as e:
             print("SQLite error:", e)
@@ -133,6 +139,8 @@ class Window(QMainWindow):
     def update_AddressBar(self, url):
         self.URLBar.setText(url.toString())
         self.URLBar.setCursorPosition(0)
+        # Insert the full URL into the history table
+        self.insert_url_to_history(url.toString())
 
 app = QApplication(sys.argv)
 app.setApplicationName('Web Browser')
