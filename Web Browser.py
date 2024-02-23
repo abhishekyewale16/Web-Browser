@@ -125,12 +125,10 @@ class Window(QMainWindow):
     def go_to_URL(self, url: QUrl):
         if url.scheme() == '':
             url.setScheme('https://')
-
-        # Insert the full URL into the history table
-        self.insert_url_to_history(url.toString())
-
         self.browser.setUrl(url)
         self.update_AddressBar(url)
+        # Insert the full URL into the history table
+        self.insert_url_to_history(url.toString())
         
     def update_AddressBar(self, url):
         self.URLBar.setText(url.toString())
