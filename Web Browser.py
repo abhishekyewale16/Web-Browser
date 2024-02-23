@@ -18,9 +18,6 @@ class Window(QMainWindow):
         self.browser.page().profile().downloadRequested.connect(self.download_requested)
         self.setCentralWidget(self.browser)
 
-        # Connect linkClicked signal to the slot
-        self.browser.page().linkClicked.connect(self.link_clicked)
-
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
 
@@ -138,18 +135,6 @@ class Window(QMainWindow):
     def update_AddressBar(self, url):
         self.URLBar.setText(url.toString())
         self.URLBar.setCursorPosition(0)
-
-    def link_clicked(self, url):
-        # Handle the clicked URL
-        if url.scheme() == '':
-            url.setScheme('https://')
-
-        # Insert the clicked URL into the history table
-        self.insert_url_to_history(url.toString())
-
-        # Load the clicked URL in the browser
-        self.browser.setUrl(url)
-        self.update_AddressBar(url)
 
 app = QApplication(sys.argv)
 app.setApplicationName('Web Browser')
