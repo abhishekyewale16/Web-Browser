@@ -1,10 +1,14 @@
-# Web Browser (Main)
+# Web Browser (Hist)
 import sys
 from PyQt5.QtCore import QUrl, QDir
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import *
 import sqlite3
-import random as rd
+from datetime import datetime
+
+
+DATABASE_FILE = 'browser_history.db'
+TABLE_NAME = 'history'
 
 class Window(QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -12,7 +16,7 @@ class Window(QMainWindow):
         self.browser = QWebEngineView()
         self.browser.setUrl(QUrl('https://www.google.com/'))
         self.browser.urlChanged.connect(self.update_AddressBar)
-        self.browser.page().profile().downloadRequested.connect(self.download_requested)  # Connect the download_requested method
+        self.browser.page().profile().downloadRequested.connect(self.download_requested)
         self.setCentralWidget(self.browser)
 
         self.status_bar = QStatusBar()
@@ -53,7 +57,7 @@ class Window(QMainWindow):
         self.addToolBar(bookmarks_toolbar)
 
         KBPCollege = QAction("KBP College", self)
-        KBPCollege.setStatusTip("Go to PythonGeeks website")
+        KBPCollege.setStatusTip("Go to College Website website")
         KBPCollege.triggered.connect(lambda: self.go_to_URL(QUrl("https://kbpcollegevashi.edu.in")))
         bookmarks_toolbar.addAction(KBPCollege)
 
@@ -82,17 +86,36 @@ class Window(QMainWindow):
         self.create_table()
     
     def create_table(self):
-        connection = sqlite3.connect('browser_history.db')
-        cursor = connection.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                url TEXT NOT NULL
-            )
-        ''')
-        connection.commit()
-        connection.close()
+        try:
+            connection = sqlite3.connect(DATABASE_FILE)
+            cursor = connection.cursor()
+            cursor.execute(f'''
+                CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    url TEXT NOT NULL,
+                    timestamp TEXT NOT NULL
+                )
+            ''')
+            connection.commit()
+        except sqlite3.Error as e:
+            print("SQLite error:", e)
+        finally:
+            connection.close()
 
+    def insert_url_to_history(self, full_url):
+        try:
+            connection = sqlite3.connect(DATABASE_FILE)
+            cursor = connection.cursor()
+
+            # Get current timestamp in a specific format
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            cursor.execute(f'INSERT INTO {TABLE_NAME} (url, timestamp) VALUES (?, ?)', (full_url, timestamp))
+            connection.commit()
+        except sqlite3.Error as e:
+            print("SQLite error:", e)
+        finally:
+            connection.close()
 
     def download_requested(self, download):
         options = QFileDialog.Options()
@@ -108,25 +131,16 @@ class Window(QMainWindow):
     def go_to_URL(self, url: QUrl):
         if url.scheme() == '':
             url.setScheme('https://')
-
-        # Insert the URL into the history table
-        self.insert_url_to_history(url.toString())
-
         self.browser.setUrl(url)
         self.update_AddressBar(url)
+        # Insert the full URL into the history table
+        self.insert_url_to_history(url.toString())
         
-    def insert_url_to_history(self, url):
-        connection = sqlite3.connect('browser_history.db')
-        cursor = connection.cursor()
-        cursor.execute('INSERT INTO history (url) VALUES (?)', (url,))
-        connection.commit()
-        connection.close()
-
-
     def update_AddressBar(self, url):
         self.URLBar.setText(url.toString())
         self.URLBar.setCursorPosition(0)
-
+        # Insert the full URL into the history table
+        self.insert_url_to_history(url.toString())
 
 app = QApplication(sys.argv)
 app.setApplicationName('Web Browser')
