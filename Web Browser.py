@@ -10,6 +10,9 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QUrl, QDir
 import sqlite3
 from datetime import datetime
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
+
 
 
 DATABASE_FILE = 'browser_history.db'
@@ -146,14 +149,13 @@ class Window(QMainWindow):
             url.setScheme('https://')
         self.browser.setUrl(url)
         self.update_AddressBar(url)
-        # Insert the full URL into the history table
-        self.insert_url_to_history(url.toString())
 
     def update_AddressBar(self, url):
-        self.URLBar.setText(url.toString())
-        self.URLBar.setCursorPosition(0)
         # Insert the full URL into the history table
         self.insert_url_to_history(url.toString())
+        self.URLBar.setText(url.toString())
+        self.URLBar.setCursorPosition(0)
+        
 
 
 class HistoryWindow(QDialog):
@@ -161,15 +163,18 @@ class HistoryWindow(QDialog):
         super(HistoryWindow, self).__init__(*args, **kwargs)
         self.setWindowTitle("Browser History")
         self.setMinimumSize(800, 600)
+        
 
-        self.history_list = QListWidget(self)
+        self.history_list = QTreeWidget(self)
         self.history_list.setStyleSheet("font-size: 16px;")  # Adjust font size
+        self.history_list.setHeaderHidden(True)  # Hide the header of the tree widget
 
         self.populate_history_list()
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.history_list)
         self.setLayout(layout)
+
 
     def populate_history_list(self):
         try:
@@ -186,15 +191,14 @@ class HistoryWindow(QDialog):
                 # Extract the date from the query result
                 date = date_entry[0]
 
-                # Create a QLabel for the date and set its font and size
-                date_label = QLabel(f"\n{date}\n")
-                date_label.setFont(QFont("Arial", 5, QFont.Bold))
+                # Create a QTreeWidgetItem for the date and set its font and size
+                date_item = QTreeWidgetItem(self.history_list)
+                date_item.setText(0, date)
+                date_item.setFont(0, QFont("Arial", 18, QFont.Bold))  # Adjust font and size
 
-                # Add an empty item to the history list
-                self.history_list.addItem(QListWidgetItem())
-
-                # Set the widget for the last added item in the history list to be the date label
-                self.history_list.setItemWidget(self.history_list.item(self.history_list.count() - 1), date_label)
+                # Add a spacer item with fixed height between date label and history entries
+                spacer_item = QTreeWidgetItem(self.history_list)
+                spacer_item.setSizeHint(0, QSize(20, 20))  # Set the desired size of the spacer
 
                 # Query history entries for the current date, ordered by timestamp in descending order
                 cursor.execute(f'SELECT * FROM {TABLE_NAME} WHERE DATE(timestamp) = ? ORDER BY timestamp DESC', (date,))
@@ -206,12 +210,10 @@ class HistoryWindow(QDialog):
                     url = entry[1]
                     timestamp = entry[2]
 
-                    # Create a QListWidgetItem for the history entry and set its font and size
-                    item = QListWidgetItem(f"{timestamp}: {url}")
-                    item.setFont(QFont("Arial", 14))
-
-                    # Add the history entry item to the history list
-                    self.history_list.addItem(item)
+                    # Create a QTreeWidgetItem for the history entry and set its font and size
+                    entry_item = QTreeWidgetItem(date_item)
+                    entry_item.setText(0, f"{timestamp}: {url}")
+                    entry_item.setFont(0, QFont("Arial", 14))
 
         except sqlite3.Error as e:
             # Handle SQLite errors by printing the error message
